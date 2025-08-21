@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tic Tac Toe — Pink Edition (Single File)</title>
+<style>
+  /* --- Theme / layout (kept as you liked) --- */
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:linear-gradient(180deg,#ffe8f3,#ffd1eb);display:flex;align-items:center;justify-content:center;padding:20px}
+  .bg{position:fixed;inset:0;pointer-events:none;background:
+    radial-gradient(circle at 10% 20%, rgba(255,77,166,0.06), transparent 10%),
+    radial-gradient(circle at 90% 80%, rgba(255,121,196,0.06), transparent 12%)}
+  .app{width:100%;max-width:920px;margin:auto}
+
+  .screen{display:none}
+  .screen.active{display:block}
+
+  .card{background:rgba(255,255,255,0.92);padding:26px;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.12);text-align:center}
+  .title{margin:0;color:#ff4da6;font-size:34px}
+  .desc{color:#6b4a5a;margin-top:8px;margin-bottom:16px}
+  .image-wrap{display:flex;justify-content:center;margin-bottom:16px}
+  .home-image{width:260px;border-radius:12px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,0.8),rgba(255,255,255,0.6));border:4px solid rgba(255,77,166,0.22);box-shadow:0 12px 40px rgba(255,77,166,0.08);object-fit:cover}
+  .modes{display:flex;flex-direction:column;gap:12px;align-items:center}
+  .mode-btn{width:240px;padding:12px 18px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:white;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(255,77,166,0.18)}
+  .mode-btn.outline{background:transparent;color:#ff4da6;border:2px solid rgba(255,77,166,0.12);box-shadow:none}
+  .hint{color:#6b4a5a;margin-top:10px;font-size:14px}
+
+  /* Modal generic */
+  .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);opacity:0;pointer-events:none;transition:opacity .18s}
+  .modal.show{opacity:1;pointer-events:all}
+  .modal-card{width:320px;background:#fff;padding:18px;border-radius:12px;text-align:center;transform:translateY(12px) scale(.98);transition:transform .26s}
+  .level-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+  .lvl{padding:12px 18px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:white;font-weight:700;cursor:pointer}
+  .lvl.primary{box-shadow:0 10px 30px rgba(255,77,166,0.14)}
+  .ghost{background:transparent;border:2px solid rgba(255,77,166,0.12);color::#ff4da6;cursor:pointer;margin-top:5px}
+
+  /* Game layout */
+  .game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .top-btn{background:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;color:#ff4da6;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  .title-wrap{text-align:center;flex:1}
+  .mode-text{color:#6b4a5a;margin-top:6px;font-weight:600}
+  .board-zone{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .level-info{color:#ff4da6;font-weight:800}
+  .board{display:grid;grid-template-columns:repeat(3,120px);grid-template-rows:repeat(3,120px);gap:12px;position:relative}
+  .cell{width:120px;height:120px;background:#fff;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:52px;color:#ff4da6;cursor:pointer;transition:transform .12s,box-shadow .12s}
+  .cell:hover{transform:translateY(-6px);box-shadow:0 14px 30px rgba(255,77,166,0.12)}
+  .cell.marked{transform:scale(1)}
+  .reset-main{margin-top:8px;padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:#fff;font-weight:800;cursor:pointer}
+  .win-line{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+  .win-anim{position:absolute;background:linear-gradient(90deg,transparent,var(--accent,#ff4da6),transparent);box-shadow:0 0 26px rgba(255,77,166,0.6);animation:pulse 1.1s ease-in-out}
+  @keyframes pulse{0%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+
+  /* result */
+  .result-card{padding:22px;border-radius:12px;width:320px}
+  .result-icon{font-size:46px;margin-bottom:5px}
+  .vertical-actions{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+  .primary{padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:#fff;font-weight:700;cursor:pointer}
+  .ghost{padding:10px;border-radius:10px;border:2px solid rgba(255,77,166,0.12);background:transparent;color:#ff4da6;cursor:pointer}
+
+  @media(max-width:520px){.board{grid-template-columns:repeat(3,86px);grid-template-rows:repeat(3,86px);gap:8px}.cell{width:86px;height:86px;font-size:36px}.home-image{width:160px}}
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="app">
+
+    <!-- HOME -->
+    <main id="home" class="screen active">
+      <div class="card">
+        <h1 class="title">Tic Tac Toe</h1>
+        <p class="desc">Play the classic Tic Tac Toe with your friend or challenge the AI with smart moves!</p>
+
+        <div class="image-wrap">
+          <!-- Attempt to use user's image (if present at this relative path), otherwise fallback to SVG -->
+          <img src="assets/images/board_preview.png" alt="Board preview" id="homeImage" class="home-image"
+               onerror="this.style.display='none'; document.getElementById('svgFallback').style.display='block'">
+          <div id="svgFallback" style="display:none">
+            <svg viewBox="0 0 300 300" class="home-image" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+              <rect width="300" height="300" rx="18" fill="#fff" opacity="0.98"/>
+              <g stroke="#ff79c4" stroke-width="10" stroke-linecap="round">
+                <line x1="100" y1="20" x2="100" y2="280"/>
+                <line x1="200" y1="20" x2="200" y2="280"/>
+                <line x1="20" y1="100" x2="280" y2="100"/>
+                <line x1="20" y1="200" x2="280" y2="200"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="modes">
+          <button id="btnCpu" class="mode-btn">Play vs AI</button>
+          <button id="btn2p" class="mode-btn">2 Players</button>
+        </div>
+        <div class="hint">Tip: AI has three levels — Easy, Medium & Hard.</div>
+      </div>
+    </main>
+
+    <!-- LEVEL POPUP -->
+    <div id="levelModal" class="modal" aria-hidden="true">
+      <div class="modal-card">
+        <h2>Select AI Level</h2>
+        <div class="level-list">
+          <button data-level="easy" class="lvl">Easy</button>
+          <button data-level="medium" class="lvl">Medium</button>
+          <button data-level="hard" class="lvl primary">Hard</button>
+        </div>
+        <button id="levelCancel" class="ghost">Cancel</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <section id="game" class="screen">
+      <header class="game-header">
+        <button id="backBtn" class="top-btn">← Back</button>
+        <div class="title-wrap">
+          <h1 class="title">Tic Tac Toe</h1>
+          <div id="modeText" class="mode-text">You vs AI</div>
+        </div>
+        <button id="settingsBtn" class="top-btn">⚙️</button>
+      </header>
+
+      <div class="board-zone card" style="padding:18px">
+        <div id="levelInfo" class="level-info" aria-hidden="true">Level: Hard</div>
+        <div id="board" class="board" role="grid" aria-label="Tic Tac Toe board"></div>
+        <button id="resetBtn" class="reset-main">Reset</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <div id="settingsModal" class="modal small" aria-hidden="true">
+      <div class="modal-card">
+        <h3>Settings</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+          <div style="font-weight:700;color:#6b4a5a">Sound</div>
+          <button id="soundToggle" class="top-btn" style="padding:6px 12px">ON</button>
+        </div>
+        <div style="margin-top:8px"><button id="settingsClose" class="mode-btn outline">Close</button></div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="resultModal" class="modal result" aria-hidden="true">
+      <div class="modal-card result-card">
+        <div id="resultIcon" class="result-icon">🎉</div>
+        <h2 id="resultTitle">You Win!</h2>
+        <p id="resultSub" class="result-sub">Nice move</p>
+        <div class="vertical-actions">
+          <button id="playAgain" class="primary">Play Again</button>
+          <button id="goHome" class="ghost">Go Home</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* ========= Full working JS (single-file) =========
+   - Modes: CPU / 2-player
+   - CPU levels: easy / medium / hard (minimax)
+   - Sounds synthesized via WebAudio (no external files required)
+   - UI: level modal vertical, settings popup, reset, back, result popup
+*/
+
+(() => {
+  // Elements
+  const home = document.getElementById('home');
+  const btnCpu = document.getElementById('btnCpu');
+  const btn2p = document.getElementById('btn2p');
+  const levelModal = document.getElementById('levelModal');
+  const levelButtons = Array.from(document.querySelectorAll('.lvl'));
+  const levelCancel = document.getElementById('levelCancel');
+
+  const game = document.getElementById('game');
+  const backBtn = document.getElementById('backBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const soundToggle = document.getElementById('soundToggle');
+  const settingsClose = document.getElementById('settingsClose');
+  const levelInfo = document.getElementById('levelInfo');
+  const modeText = document.getElementById('modeText');
+  const boardEl = document.getElementById('board');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const resultModal = document.getElementById('resultModal');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultSub = document.getElementById('resultSub');
+  const resultIcon = document.getElementById('resultIcon');
+  const playAgain = document.getElementById('playAgain');
+  const goHome = document.getElementById('goHome');
+
+  // Game state
+  let mode = '2p';     // 'cpu' or '2p'
+  let cpuLevel = 'hard';
+  let board = Array(9).fill(null);
+  let current = 'X';
+  let active = false;
+
+  const WIN_COMBOS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  // Audio setup (Web Audio API synthesizer)
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = AudioCtx ? new AudioCtx() : null;
+  let soundOn = true;
+
+  function playTone(freq=440, type='sine', duration=0.12, gain=0.12){
+    if(!audioCtx || !soundOn) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = gain;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    // exponential decay
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    o.stop(audioCtx.currentTime + duration + 0.02);
+  }
+
+  function clickSound(){ playTone(1200,'square',0.06,0.08); }
+  function moveSound(){ playTone(900,'sine',0.08,0.12); }
+  function winSound(){ playTone(880,'sine',0.09,0.18); setTimeout(()=> playTone(1100,'sine',0.09,0.12), 80); }
+  function loseSound(){ playTone(320,'sine',0.28,0.18); }
+  function drawSound(){ playTone(700,'sine',0.12,0.12); }
+
+  // Helpers: UI show/hide
+  function showHome(){ home.classList.add('active'); game.classList.remove('active'); closeModal(levelModal); closeModal(settingsModal); closeModal(resultModal); }
+  function showGame(){ home.classList.remove('active'); game.classList.add('active'); }
+  function openModal(mod){ mod.classList.add('show'); mod.setAttribute('aria-hidden','false'); }
+  function closeModal(mod){ mod.classList.remove('show'); mod.setAttribute('aria-hidden','true'); }
+
+  // Build board DOM
+  function buildBoard(){
+    boardEl.innerHTML = '';
+    for(let i=0;i<9;i++){
+      const b = document.createElement('button');
+      b.className = 'cell';
+      b.dataset.i = i;
+      b.addEventListener('click', ()=> cellClick(i));
+      b.addEventListener('keydown', e=> { if(e.key === 'Enter') cellClick(i); });
+      boardEl.appendChild(b);
+    }
+  }
+
+  // Reset board state
+  function resetBoard(keepMode=true){
+    board = Array(9).fill(null);
+    current = 'X';
+    active = true;
+    document.querySelectorAll('.cell').forEach(c=> { c.textContent = ''; c.classList.remove('marked'); });
+    const overlays = boardEl.querySelectorAll('.win-line'); overlays.forEach(o=>o.remove());
+    if(soundOn) clickSound();
+  }
+
+  // Paint cell
+  function paint(i, mark){
+    const el = boardEl.querySelector(`.cell[data-i="${i}"]`);
+    if(!el) return;
+    el.textContent = mark;
+    el.classList.add('marked');
+    el.style.transform = 'translateY(-12px)';
+    setTimeout(()=> el.style.transform = 'translateY(0)', 60);
+  }
+
+  // Game logic: evaluate winner or draw
+  function evaluate(b){
+    for(const c of WIN_COMBOS){
+      const [a,x,y] = c;
+      if(b[a] && b[a] === b[x] && b[a] === b[y]) return { winner: b[a], line:c };
+    }
+    if(b.every(Boolean)) return { winner:'D', line: [] };
+    return null;
+  }
+
+  // Highlight winning line & overlay
+  function highlightWin(line){
+    line.forEach(idx=>{
+      const el = boardEl.querySelector(`.cell[data-i="${idx}"]`);
+      if(el) el.animate([{boxShadow:'0 0 0px rgba(255,77,166,0)'},{boxShadow:'0 0 20px rgba(255,77,166,0.9)'},{boxShadow:'0 0 8px rgba(255,77,166,0.6)'}],{duration:900,iterations:2});
+    });
+    const overlay = document.createElement('div'); overlay.className = 'win-line';
+    const lineEl = document.createElement('div'); lineEl.className = 'win-anim';
+    const [a,,c] = line;
+    if(a===0 && c===2){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:18%;'; }
+    else if(a===3 && c===5){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:50%;'; }
+    else if(a===6 && c===8){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:82%;'; }
+    else if(a===0 && c===6){ lineEl.style.cssText='width:6px;height:70%;left:18%;top:15%;'; }
+    else if(a===1 && c===7){ lineEl.style.cssText='width:6px;height:70%;left:50%;top:15%;'; }
+    else if(a===2 && c===8){ lineEl.style.cssText='width:6px;height:70%;left:82%;top:15%;'; }
+    else if(a===0 && c===8){ lineEl.style.cssText='width:6px;height:120%;left:50%;top:-10%;transform:rotate(-45deg);'; }
+    else if(a===2 && c===6){ lineEl.style.cssText='width:6px;height:120%;left:50%;top:-10%;transform:rotate(45deg);'; }
+    overlay.appendChild(lineEl); boardEl.appendChild(overlay);
+    setTimeout(()=> overlay.remove(), 1500);
+  }
+
+  // Show result modal
+  function showResult(type, winnerLabel){
+    closeModal(levelModal);
+    openModal(resultModal);
+    if(type === 'draw'){
+      resultTitle.textContent = "It's a Draw";
+      resultIcon.textContent = '🤝';
+      resultSub.textContent = "Nobody wins this time.";
+    } else if(type === 'win'){
+      resultTitle.textContent = (winnerLabel === 'You') ? 'You Win!' : (winnerLabel === 'CPU' ? 'You Lose' : winnerLabel + ' Wins!');
+      resultIcon.textContent = (winnerLabel === 'You') ? '🎉' : (winnerLabel === 'CPU' ? '💀' : '🏆');
+      resultSub.textContent = (winnerLabel === 'You') ? 'Nice move!' : (winnerLabel === 'CPU' ? 'AI played well.' : 'Good play!');
+    }
+  }
+
+  // Cell click (player or CPU sequence)
+  function cellClick(i){
+    if(!active) return;
+    if(board[i]) return;
+    board[i] = current;
+    paint(i, current);
+    if(soundOn) moveSound();
+    const res = evaluate(board);
+    if(res){
+      active = false;
+      if(res.winner === 'D'){
+        if(soundOn) drawSound();
+        showResult('draw');
+      } else {
+        if(soundOn) (res.winner === 'X' ? winSound() : loseSound());
+        highlightWin(res.line);
+        const winnerLabel = res.winner === 'X' ? (mode === 'cpu' ? 'You' : 'Player 1') : (mode === 'cpu' ? 'CPU' : 'Player 2');
+        showResult('win', winnerLabel);
+      }
+      return;
+    }
+    // Switch
+    current = current === 'X' ? 'O' : 'X';
+    // If CPU mode and O turn -> CPU plays
+    if(mode === 'cpu' && current === 'O' && active){
+      setTimeout(()=> cpuPlay(), 420);
+    }
+  }
+
+  // CPU logic
+  function cpuPlay(){
+    let idx = null;
+    if(cpuLevel === 'easy'){
+      idx = randomMove();
+    } else if(cpuLevel === 'medium'){
+      idx = findWinningMove('O') ?? findWinningMove('X');
+      if(idx == null) idx = randomMove();
+    } else { // hard
+      const mm = minimax(board.slice(), 'O');
+      idx = mm.index;
+    }
+    if(idx != null){
+      board[idx] = 'O';
+      paint(idx, 'O');
+      if(soundOn) moveSound();
+      const res = evaluate(board);
+      if(res){
+        active = false;
+        if(res.winner === 'D'){ if(soundOn) drawSound(); showResult('draw'); }
+        else { if(soundOn) (res.winner === 'X' ? winSound() : loseSound()); highlightWin(res.line); const winnerLabel = res.winner === 'X' ? 'You' : 'CPU'; showResult('win', winnerLabel); }
+        return;
+      }
+      current = 'X';
+    }
+  }
+
+  function randomMove(){
+    const avail = board.map((v,i)=> v?null:i).filter(v=> v!==null);
+    if(!avail.length) return null;
+    return avail[Math.floor(Math.random() * avail.length)];
+  }
+
+  function findWinningMove(player){
+    for(const combo of WIN_COMBOS){
+      const [a,b,c] = combo;
+      const line = [board[a], board[b], board[c]];
+      if(line.filter(x=> x === player).length === 2 && line.includes(null)){
+        return [a,b,c][line.indexOf(null)];
+      }
+    }
+    return null;
+  }
+
+  // Minimax implementation
+  function minimax(newBoard, player){
+    const avail = newBoard.map((v,i)=> v==null?i:null).filter(v=> v!==null);
+    if(checkWinStatic(newBoard, 'X')) return { score: -10 };
+    if(checkWinStatic(newBoard, 'O')) return { score: 10 };
+    if(!avail.length) return { score: 0 };
+
+    const moves = [];
+    for(const i of avail){
+      const move = { index: i };
+      newBoard[i] = player;
+      const result = minimax(newBoard, player === 'O' ? 'X' : 'O');
+      move.score = result.score;
+      newBoard[i] = null;
+      moves.push(move);
+    }
+
+    let bestMove;
+    if(player === 'O'){
+      let bestScore = -Infinity;
+      for(const m of moves) if(m.score > bestScore){ bestScore = m.score; bestMove = m; }
+    } else {
+      let bestScore = Infinity;
+      for(const m of moves) if(m.score < bestScore){ bestScore = m.score; bestMove = m; }
+    }
+    return bestMove;
+  }
+
+  function checkWinStatic(b, player){
+    return WIN_COMBOS.some(([a,c,d])=> b[a] === player && b[c] === player && b[d] === player);
+  }
+
+  // UI event wiring
+  btnCpu.addEventListener('click', ()=> {
+    mode = 'cpu';
+    openModal(levelModal);
+    if(soundOn) clickSound();
+  });
+  btn2p.addEventListener('click', ()=> {
+    mode = '2p';
+    cpuLevel = null;
+    startGame();
+    if(soundOn) clickSound();
+  });
+
+  levelButtons.forEach(b => b.addEventListener('click', (e)=> {
+    cpuLevel = e.currentTarget.dataset.level;
+    closeModal(levelModal);
+    startGame();
+    if(soundOn) clickSound();
+  }));
+  levelCancel.addEventListener('click', ()=> { closeModal(levelModal); if(soundOn) clickSound(); });
+
+  backBtn.addEventListener('click', ()=> { showHome(); if(soundOn) clickSound(); });
+  settingsBtn.addEventListener('click', ()=> {
+    if(settingsModal.classList.contains('show')) closeModal(settingsModal); else openModal(settingsModal);
+    if(soundOn) clickSound();
+  });
+  settingsClose.addEventListener('click', ()=> closeModal(settingsModal));
+  soundToggle.addEventListener('click', ()=> {
+    soundOn = !soundOn;
+    soundToggle.textContent = soundOn ? 'ON' : 'OFF';
+    if(soundOn) clickSound();
+  });
+
+  resetBtn.addEventListener('click', ()=> { resetBoard(); if(soundOn) clickSound(); });
+
+  playAgain.addEventListener('click', ()=> { closeModal(resultModal); resetBoard(); if(soundOn) clickSound(); });
+  goHome.addEventListener('click', ()=> { closeModal(resultModal); showHome(); if(soundOn) clickSound(); });
+
+  // startGame sets up UI & board
+  function startGame(){
+    showGame();
+    buildBoard();
+    resetBoard();
+    modeText.textContent = mode === 'cpu' ? 'You vs AI' : 'Player 1 vs Player 2';
+    if(mode === 'cpu'){
+      levelInfo.style.display = 'block';
+      levelInfo.textContent = 'Level: ' + (cpuLevel ? cpuLevel.charAt(0).toUpperCase()+cpuLevel.slice(1) : 'Hard');
+    } else {
+      levelInfo.style.display = 'none';
+    }
+  }
+
+  // initial boot
+  buildBoard();
+  showHome();
+
+  // Expose for debugging in console if needed
+  window._ttt = { startGame, resetBoard, randomMove, minimax };
+})();
+</script>
+</body>
+</html>
