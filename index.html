@@ -33,7 +33,7 @@
   .level-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
   .lvl{padding:12px 18px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:white;font-weight:700;cursor:pointer}
   .lvl.primary{box-shadow:0 10px 30px rgba(255,77,166,0.14)}
-  .ghost{background:transparent;border:2px solid rgba(255,77,166,0.12);color::#ff4da6;cursor:pointer;margin-top:5px}
+  .ghost{background:transparent;border:2px solid rgba(255,77,166,0.12);color:#ff4da6;cursor:pointer;margin-top:5px}
 
   /* Game layout */
   .game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -42,14 +42,97 @@
   .mode-text{color:#6b4a5a;margin-top:6px;font-weight:600}
   .board-zone{display:flex;flex-direction:column;align-items:center;gap:12px}
   .level-info{color:#ff4da6;font-weight:800}
+  
+  /* Turn indicator styles */
+  .turn-indicator{
+    background: linear-gradient(135deg,#ff4da6,#ff79c4);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(255,77,166,0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .turn-indicator.ai-turn{
+    background: linear-gradient(135deg,#ff4da6,#ff79c4);
+    color: white;
+    animation: pulse 1.5s infinite;
+  }
+  
+  .turn-indicator.game-over{
+    background: linear-gradient(135deg,#ff4da6,#ff79c4);
+    color: white;
+    animation: none;
+  }
+  
+  @keyframes pulse{
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+  }
+  
+  /* Game opening animation */
+  .game-opening {
+    animation: gameSlideIn 0.6s ease-out;
+  }
+  
+  @keyframes gameSlideIn {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  
+  /* Board entrance animation */
+  .board-entering {
+    animation: boardFadeIn 0.8s ease-out;
+  }
+  
+  @keyframes boardFadeIn {
+    0% { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  
+  /* Cell entrance stagger animation */
+  .cell-enter {
+    animation: cellPop 0.4s ease-out;
+  }
+  
+  @keyframes cellPop {
+    0% { opacity: 0; transform: scale(0.8); }
+    70% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  
   .board{display:grid;grid-template-columns:repeat(3,120px);grid-template-rows:repeat(3,120px);gap:12px;position:relative}
   .cell{width:120px;height:120px;background:#fff;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:52px;color:#ff4da6;cursor:pointer;transition:transform .12s,box-shadow .12s}
   .cell:hover{transform:translateY(-6px);box-shadow:0 14px 30px rgba(255,77,166,0.12)}
   .cell.marked{transform:scale(1)}
+  .cell.disabled{cursor:not-allowed;opacity:0.6}
+  .cell.disabled:hover{transform:none;box-shadow:none}
+  
   .reset-main{margin-top:8px;padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:#fff;font-weight:800;cursor:pointer}
-  .win-line{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  .win-anim{position:absolute;background:linear-gradient(90deg,transparent,var(--accent,#ff4da6),transparent);box-shadow:0 0 26px rgba(255,77,166,0.6);animation:pulse 1.1s ease-in-out}
-  @keyframes pulse{0%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+
+  /* Wait message */
+  .wait-message{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  
+  .wait-message.show{
+    opacity: 1;
+  }
 
   /* result */
   .result-card{padding:22px;border-radius:12px;width:320px}
@@ -58,7 +141,11 @@
   .primary{padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff4da6,#ff79c4);color:#fff;font-weight:700;cursor:pointer}
   .ghost{padding:10px;border-radius:10px;border:2px solid rgba(255,77,166,0.12);background:transparent;color:#ff4da6;cursor:pointer}
 
-  @media(max-width:520px){.board{grid-template-columns:repeat(3,86px);grid-template-rows:repeat(3,86px);gap:8px}.cell{width:86px;height:86px;font-size:36px}.home-image{width:160px}}
+  @media(max-width:520px){
+    .board{grid-template-columns:repeat(3,86px);grid-template-rows:repeat(3,86px);gap:8px}
+    .cell{width:86px;height:86px;font-size:36px}
+    .home-image{width:160px}
+  }
 </style>
 </head>
 <body>
@@ -112,7 +199,7 @@
     <!-- GAME -->
     <section id="game" class="screen">
       <header class="game-header">
-        <button id="backBtn" class="top-btn">⬅</button>
+        <button id="backBtn" class="top-btn">◀</button>
         <div class="title-wrap">
           <h1 class="title">Tic Tac Toe</h1>
           <div id="modeText" class="mode-text">You vs AI</div>
@@ -122,6 +209,7 @@
 
       <div class="board-zone card" style="padding:18px">
         <div id="levelInfo" class="level-info" aria-hidden="true">Level: Hard</div>
+        <div id="turnIndicator" class="turn-indicator">Your Turn</div>
         <div id="board" class="board" role="grid" aria-label="Tic Tac Toe board"></div>
         <button id="resetBtn" class="reset-main">Reset</button>
       </div>
@@ -142,7 +230,7 @@
     <!-- RESULT -->
     <div id="resultModal" class="modal result" aria-hidden="true">
       <div class="modal-card result-card">
-        <div id="resultIcon" class="result-icon">🎉</div>
+        <div id="resultIcon" class="result-icon">🏆</div>
         <h2 id="resultTitle">You Win!</h2>
         <p id="resultSub" class="result-sub">Nice move</p>
         <div class="vertical-actions">
@@ -152,15 +240,13 @@
       </div>
     </div>
 
+    <!-- Wait Message -->
+    <div id="waitMessage" class="wait-message">Please wait for your turn!</div>
+
   </div>
 
 <script>
-/* ========= Full working JS (single-file) =========
-   - Modes: CPU / 2-player
-   - CPU levels: easy / medium / hard (minimax)
-   - Sounds synthesized via WebAudio (no external files required)
-   - UI: level modal vertical, settings popup, reset, back, result popup
-*/
+/* ========= Fixed Tic Tac Toe JS with proper turn management ========= */
 
 (() => {
   // Elements
@@ -179,8 +265,10 @@
   const settingsClose = document.getElementById('settingsClose');
   const levelInfo = document.getElementById('levelInfo');
   const modeText = document.getElementById('modeText');
+  const turnIndicator = document.getElementById('turnIndicator');
   const boardEl = document.getElementById('board');
   const resetBtn = document.getElementById('resetBtn');
+  const waitMessage = document.getElementById('waitMessage');
 
   const resultModal = document.getElementById('resultModal');
   const resultTitle = document.getElementById('resultTitle');
@@ -195,6 +283,8 @@
   let board = Array(9).fill(null);
   let current = 'X';
   let active = false;
+  let aiTurn = false;  // NEW: Flag to track AI's turn
+  let gameEnded = false; // NEW: Flag to track if game ended
 
   const WIN_COMBOS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
@@ -229,26 +319,90 @@
   function openModal(mod){ mod.classList.add('show'); mod.setAttribute('aria-hidden','false'); }
   function closeModal(mod){ mod.classList.remove('show'); mod.setAttribute('aria-hidden','true'); }
 
-  // Build board DOM
+  // NEW: Show/hide wait message
+  function showWaitMessage(){ waitMessage.classList.add('show'); }
+  function hideWaitMessage(){ waitMessage.classList.remove('show'); }
+
+  // NEW: Update turn indicator - FIXED VISIBILITY BUG
+  function updateTurnIndicator(){
+    if(gameEnded) {
+      // Game ended - show full visibility
+      turnIndicator.textContent = 'Game Over';
+      turnIndicator.classList.remove('ai-turn');
+      turnIndicator.classList.add('game-over');
+      return;
+    }
+    
+    if(mode === 'cpu'){
+      if(current === 'X' && !aiTurn){
+        turnIndicator.textContent = 'Your Turn (X)';
+        turnIndicator.classList.remove('ai-turn', 'game-over');
+      } else if(current === 'O' || aiTurn){
+        turnIndicator.textContent = 'AI is thinking...';
+        turnIndicator.classList.add('ai-turn');
+        turnIndicator.classList.remove('game-over');
+      }
+    } else {
+      turnIndicator.textContent = `Player ${current === 'X' ? '1' : '2'}'s Turn (${current})`;
+      turnIndicator.classList.remove('ai-turn', 'game-over');
+    }
+  }
+
+  // NEW: Disable/enable board
+  function disableBoard(){
+    document.querySelectorAll('.cell').forEach(c=> c.classList.add('disabled'));
+  }
+  
+  function enableBoard(){
+    document.querySelectorAll('.cell').forEach(c=> c.classList.remove('disabled'));
+  }
+
+  // Build board DOM - WITH ENTRANCE ANIMATION
   function buildBoard(){
     boardEl.innerHTML = '';
+    boardEl.classList.add('board-entering');
+    
     for(let i=0;i<9;i++){
       const b = document.createElement('button');
       b.className = 'cell';
       b.dataset.i = i;
       b.addEventListener('click', ()=> cellClick(i));
       b.addEventListener('keydown', e=> { if(e.key === 'Enter') cellClick(i); });
+      
+      // Stagger cell entrance animations
+      setTimeout(() => {
+        b.classList.add('cell-enter');
+      }, i * 50);
+      
       boardEl.appendChild(b);
     }
+    
+    // Remove entrance class after animation
+    setTimeout(() => {
+      boardEl.classList.remove('board-entering');
+      document.querySelectorAll('.cell').forEach(c => c.classList.remove('cell-enter'));
+    }, 1000);
   }
 
-  // Reset board state
+  // Reset board state - CLEAR ALL INDICATOR CLASSES
   function resetBoard(keepMode=true){
     board = Array(9).fill(null);
     current = 'X';
     active = true;
-    document.querySelectorAll('.cell').forEach(c=> { c.textContent = ''; c.classList.remove('marked'); });
-    const overlays = boardEl.querySelectorAll('.win-line'); overlays.forEach(o=>o.remove());
+    aiTurn = false;
+    gameEnded = false;
+    hideWaitMessage();
+    document.querySelectorAll('.cell').forEach(c=> { 
+      c.textContent = ''; 
+      c.classList.remove('marked'); 
+      c.classList.remove('disabled');
+    });
+    const overlays = boardEl.querySelectorAll('.win-line'); 
+    overlays.forEach(o=>o.remove());
+    
+    // Clear all turn indicator classes
+    turnIndicator.classList.remove('ai-turn', 'game-over');
+    updateTurnIndicator();
     if(soundOn) clickSound();
   }
 
@@ -272,49 +426,66 @@
     return null;
   }
 
-  // Highlight winning line & overlay
+  // Highlight winning cells only - ORIGINAL ANIMATION RESTORED
   function highlightWin(line){
-    line.forEach(idx=>{
+    line.forEach((idx, i) => {
       const el = boardEl.querySelector(`.cell[data-i="${idx}"]`);
-      if(el) el.animate([{boxShadow:'0 0 0px rgba(255,77,166,0)'},{boxShadow:'0 0 20px rgba(255,77,166,0.9)'},{boxShadow:'0 0 8px rgba(255,77,166,0.6)'}],{duration:900,iterations:2});
+      if(el) {
+        // Stagger the cell animations - EXACTLY LIKE BEFORE
+        setTimeout(() => {
+          el.animate([
+            {boxShadow:'0 0 0px rgba(255,77,166,0)', transform: 'scale(1)'},
+            {boxShadow:'0 0 30px rgba(255,77,166,1)', transform: 'scale(1.1)'},
+            {boxShadow:'0 0 20px rgba(255,77,166,0.8)', transform: 'scale(1.05)'},
+            {boxShadow:'0 0 15px rgba(255,77,166,0.6)', transform: 'scale(1)'}
+          ], {
+            duration: 1000,
+            iterations: 3,
+            easing: 'ease-in-out'
+          });
+        }, i * 100);
+      }
     });
-    const overlay = document.createElement('div'); overlay.className = 'win-line';
-    const lineEl = document.createElement('div'); lineEl.className = 'win-anim';
-    const [a,,c] = line;
-    if(a===0 && c===2){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:18%;'; }
-    else if(a===3 && c===5){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:50%;'; }
-    else if(a===6 && c===8){ lineEl.style.cssText='height:6px;width:70%;left:15%;top:82%;'; }
-    else if(a===0 && c===6){ lineEl.style.cssText='width:6px;height:70%;left:18%;top:15%;'; }
-    else if(a===1 && c===7){ lineEl.style.cssText='width:6px;height:70%;left:50%;top:15%;'; }
-    else if(a===2 && c===8){ lineEl.style.cssText='width:6px;height:70%;left:82%;top:15%;'; }
-    else if(a===0 && c===8){ lineEl.style.cssText='width:6px;height:120%;left:50%;top:-10%;transform:rotate(-45deg);'; }
-    else if(a===2 && c===6){ lineEl.style.cssText='width:6px;height:120%;left:50%;top:-10%;transform:rotate(45deg);'; }
-    overlay.appendChild(lineEl); boardEl.appendChild(overlay);
-    setTimeout(()=> overlay.remove(), 1500);
   }
 
-  // Show result modal
+  // Show result modal - FIXED TURN INDICATOR UPDATE
   function showResult(type, winnerLabel){
-    closeModal(levelModal);
-    openModal(resultModal);
-    if(type === 'draw'){
-      resultTitle.textContent = "It's a Draw";
-      resultIcon.textContent = '🤝';
-      resultSub.textContent = "Nobody wins this time.";
-    } else if(type === 'win'){
-      resultTitle.textContent = (winnerLabel === 'You') ? 'You Win!' : (winnerLabel === 'CPU' ? 'You Lose' : winnerLabel + ' Wins!');
-      resultIcon.textContent = (winnerLabel === 'You') ? '🎉' : (winnerLabel === 'CPU' ? '💀' : '🏆');
-      resultSub.textContent = (winnerLabel === 'You') ? 'Nice move!' : (winnerLabel === 'CPU' ? 'AI played well.' : 'Good play!');
-    }
+    gameEnded = true;
+    hideWaitMessage();
+    updateTurnIndicator(); // This will now show proper "Game Over" styling
+    
+    // Original timing - just removed line animation delay
+    setTimeout(() => {
+      closeModal(levelModal);
+      openModal(resultModal);
+      if(type === 'draw'){
+        resultTitle.textContent = "It's a Draw!";
+        resultIcon.textContent = '🤝';
+        resultSub.textContent = "Nobody wins this time.";
+      } else if(type === 'win'){
+        resultTitle.textContent = (winnerLabel === 'You') ? 'You Win!' : (winnerLabel === 'CPU' ? 'You Lose!' : winnerLabel + ' Wins!');
+        resultIcon.textContent = (winnerLabel === 'You') ? '🏆' : (winnerLabel === 'CPU' ? '🙁' : '🏆');
+        resultSub.textContent = (winnerLabel === 'You') ? 'Nice move.' : (winnerLabel === 'CPU' ? 'AI played well.' : 'Good play!');
+      }
+    }, type === 'draw' ? 500 : 1500); // Reasonable delay for box animation
   }
 
-  // Cell click (player or CPU sequence)
+  // Cell click (player or CPU sequence) - FIXED
   function cellClick(i){
-    if(!active) return;
+    // MAJOR FIX: Check if it's AI's turn and show message
+    if(mode === 'cpu' && aiTurn){
+      showWaitMessage();
+      setTimeout(hideWaitMessage, 1000);
+      return;
+    }
+    
+    if(!active || gameEnded) return; // NEW: Also check gameEnded
     if(board[i]) return;
+    
     board[i] = current;
     paint(i, current);
     if(soundOn) moveSound();
+    
     const res = evaluate(board);
     if(res){
       active = false;
@@ -329,16 +500,24 @@
       }
       return;
     }
-    // Switch
+    
+    // Switch turn
     current = current === 'X' ? 'O' : 'X';
+    updateTurnIndicator(); // NEW
+    
     // If CPU mode and O turn -> CPU plays
-    if(mode === 'cpu' && current === 'O' && active){
-      setTimeout(()=> cpuPlay(), 420);
+    if(mode === 'cpu' && current === 'O' && active && !gameEnded){
+      aiTurn = true; // NEW: Set AI turn flag
+      disableBoard(); // NEW: Disable board during AI turn
+      updateTurnIndicator(); // NEW
+      setTimeout(()=> cpuPlay(), 600); // Slightly longer delay for better UX
     }
   }
 
-  // CPU logic
+  // CPU logic - FIXED
   function cpuPlay(){
+    if(!active || gameEnded) return; // NEW: Safety check
+    
     let idx = null;
     if(cpuLevel === 'easy'){
       idx = randomMove();
@@ -349,18 +528,31 @@
       const mm = minimax(board.slice(), 'O');
       idx = mm.index;
     }
-    if(idx != null){
+    
+    if(idx != null && !board[idx]){ // NEW: Extra safety check
       board[idx] = 'O';
       paint(idx, 'O');
       if(soundOn) moveSound();
+      
       const res = evaluate(board);
       if(res){
         active = false;
-        if(res.winner === 'D'){ if(soundOn) drawSound(); showResult('draw'); }
-        else { if(soundOn) (res.winner === 'X' ? winSound() : loseSound()); highlightWin(res.line); const winnerLabel = res.winner === 'X' ? 'You' : 'CPU'; showResult('win', winnerLabel); }
+        if(res.winner === 'D'){ 
+          if(soundOn) drawSound(); 
+          showResult('draw'); 
+        } else { 
+          if(soundOn) (res.winner === 'X' ? winSound() : loseSound()); 
+          highlightWin(res.line); 
+          const winnerLabel = res.winner === 'X' ? 'You' : 'CPU'; 
+          showResult('win', winnerLabel); 
+        }
         return;
       }
+      
       current = 'X';
+      aiTurn = false; // NEW: Reset AI turn flag
+      enableBoard(); // NEW: Re-enable board
+      updateTurnIndicator(); // NEW
     }
   }
 
@@ -451,9 +643,14 @@
   playAgain.addEventListener('click', ()=> { closeModal(resultModal); resetBoard(); if(soundOn) clickSound(); });
   goHome.addEventListener('click', ()=> { closeModal(resultModal); showHome(); if(soundOn) clickSound(); });
 
-  // startGame sets up UI & board
+  // startGame sets up UI & board - WITH GAME OPENING ANIMATION
   function startGame(){
     showGame();
+    
+    // Add opening animation to game screen
+    game.classList.add('game-opening');
+    setTimeout(() => game.classList.remove('game-opening'), 600);
+    
     buildBoard();
     resetBoard();
     modeText.textContent = mode === 'cpu' ? 'You vs AI' : 'Player 1 vs Player 2';
